@@ -1,0 +1,128 @@
+import React, { useState, useEffect } from 'react';
+import Papa from 'papaparse';
+
+function App() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/data.csv')
+      .then(response => response.text())
+      .then(csvText => {
+        Papa.parse(csvText, {
+          header: true,
+          complete: (results) => {
+            setData(results.data);
+            setLoading(false);
+          },
+          error: (error) => {
+            console.error('Error parsing CSV:', error);
+            setLoading(false);
+          }
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching CSV:', error);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '24px',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        Loading data...
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '24px',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        No data available
+      </div>
+    );
+  }
+
+  const headers = Object.keys(data[0]);
+
+  return (
+    <div style={{
+      padding: '20px',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <h1 style={{
+        textAlign: 'center',
+        marginBottom: '30px'
+      }}>
+        File Metadata Table
+      </h1>
+      <div style={{
+        overflowX: 'auto',
+        maxWidth: '100vw'
+      }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          border: '1px solid #ddd',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <thead>
+            <tr style={{
+              backgroundColor: '#f8f9fa',
+              borderBottom: '2px solid #dee2e6'
+            }}>
+              {headers.map(header => (
+                <th key={header} style={{
+                  padding: '12px',
+                  textAlign: 'left',
+                  fontWeight: 'bold',
+                  border: '1px solid #ddd',
+                  backgroundColor: '#007bff',
+                  color: 'white'
+                }}>
+                  {header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.filter(row => Object.values(row).some(val => val && val.trim() !== '')).map((row, index) => (
+              <tr key={index} style={{
+                backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa',
+                '&:hover': {
+                  backgroundColor: '#e9ecef'
+                }
+              }}>
+                {headers.map(header => (
+                  <td key={header} style={{
+                    padding: '10px 12px',
+                    border: '1px solid #ddd',
+                    textAlign: 'left'
+                  }}>
+                    {row[header] || ''}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default App;
